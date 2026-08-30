@@ -1,32 +1,40 @@
 /// <reference lib="deno.worker" />
 
+import {
+  SandboxEvent,
+  SandboxInitEvent,
+  SandboxNewStateEvent,
+  SandboxState,
+  SandboxTerminateEvent,
+} from './types.ts'
+
 let id: string | null = null
+let state: SandboxState = 'init'
 let process: Deno.ChildProcess | null = null
 
-self.onmessage = (e: MessageEvent) => {
-  console.log(e)
+onmessage = (e: MessageEvent<SandboxEvent>) => {
+  if (e.data.event === 'init') {
+    handleInit(e.data)
+  }
+  if (e.data.event === 'terminate') {
+    handleTerminate(e.data)
+  }
+}
 
-  if (e.data?.command === 'init') {
-    if (!id) {
-      id = e.data?.data.id
-    }
+function handleInit(e: SandboxInitEvent) {
+  id = e.id
+  state = 'idle'
+
+  postMessage({ event: 'new-state', newState: state } satisfies SandboxNewStateEvent)
+}
+
+function handleTerminate(_e: SandboxTerminateEvent) {
+  if (process) {
+    process.kill()
   }
 
-  if (e.data?.command === 'eval') {
-    evalCode(e.data?.data.code)
-  }
-
-  if (e.data?.command === 'stdout' && process) {
-    process.output().then((output) => {
-      console.log('STDOUT', output)
-      /*
-      self.postMessage({
-        callback: 'stdout',
-        data: output.stdout,
-      })
-      */
-    })
-  }
+  state = 'terminated'
+  postMessage({ event: 'terminate' } satisfies SandboxTerminateEvent)
 }
 
 function evalCode(code: string) {

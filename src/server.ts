@@ -31,9 +31,9 @@ const create: ServerRoute = {
 }
 
 const terminate: ServerRoute<{ id: string }> = {
-  match: new URLPattern({ pathname: '/terminate' }),
+  match: new URLPattern({ pathname: '/terminate/:id' }),
   async fetch(_req, ctx, { id }) {
-    ctx.sandboxManager.delete(id)
+    await ctx.sandboxManager.delete(id)
 
     return new Response(null, { status: 204 })
   },
