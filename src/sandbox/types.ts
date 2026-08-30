@@ -22,8 +22,13 @@ export type SandboxEvalCodeEvent = {
   code: string
 }
 
-export type SandboxReadOutputEvent = {
-  event: 'read-output'
+export type SandboxRequestOutputEvent = {
+  event: 'request-output'
+}
+
+export type SandboxOutputEvent = {
+  event: 'output'
+  output: Uint8Array<ArrayBuffer>
 }
 
 export type SandboxTerminateEvent = {
@@ -34,4 +39,6 @@ export type SandboxEvent =
   | SandboxInitEvent
   | SandboxNewStateEvent
   | SandboxEvalCodeEvent
+  | SandboxRequestOutputEvent
+  | SandboxOutputEvent
   | SandboxTerminateEvent

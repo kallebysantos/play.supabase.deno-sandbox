@@ -2,6 +2,7 @@ import {
   SandboxEvalCodeEvent,
   SandboxEvent,
   SandboxInitEvent,
+  SandboxRequestOutputEvent,
   SandboxState,
   SandboxTerminateEvent,
 } from './types.ts'
@@ -23,7 +24,7 @@ export class SandboxManager {
   }
 
   create(): Sandbox {
-    const id = crypto.randomUUID()
+    const id = Deno.env.get('ENV') === 'DEV' ? '123' : crypto.randomUUID()
     const worker = new Worker(this.workerModulePath.href, {
       type: 'module',
     })
@@ -52,6 +53,7 @@ export class SandboxManager {
 export class Sandbox {
   readonly #inner: Worker
   #state: SandboxState
+  #output: Uint8Array<ArrayBuffer> | undefined
 
   constructor(
     private readonly id: string,
@@ -74,6 +76,9 @@ export class Sandbox {
     if (e.data.event === 'new-state') {
       this.setState(e.data.newState)
     }
+    if (e.data.event === 'output') {
+      this.setOutput(e.data.output)
+    }
     if (e.data.event === 'terminate') {
       this._terminate()
     }
@@ -86,8 +91,16 @@ export class Sandbox {
     return oldState
   }
 
+  private setOutput(newOutput: Uint8Array<ArrayBuffer>) {
+    this.#output = newOutput
+  }
+
   getState() {
     return this.#state
+  }
+
+  getOutput() {
+    return this.#output
   }
 
   async *waitState(expected: SandboxState): AsyncGenerator<SandboxState> {
@@ -115,6 +128,14 @@ export class Sandbox {
         code,
       } satisfies SandboxEvalCodeEvent,
     )
+  }
+
+  askOutput() {
+    if (this.#state !== 'processing') {
+      throw new Error(`Working is not 'processing' but ${this.#state}`)
+    }
+
+    this.#inner.postMessage({ event: 'request-output' } satisfies SandboxRequestOutputEvent)
   }
 
   private _terminate() {

@@ -30,15 +30,6 @@ const create: ServerRoute = {
   },
 }
 
-const terminate: ServerRoute<{ id: string }> = {
-  match: new URLPattern({ pathname: '/terminate/:id' }),
-  async fetch(_req, ctx, { id }) {
-    await ctx.sandboxManager.delete(id)
-
-    return new Response(null, { status: 204 })
-  },
-}
-
 export const run: ServerRoute<{ id: string }> = {
   match: new URLPattern({ pathname: '/run/:id' }),
   async fetch(req, ctx, { id }) {
@@ -60,6 +51,38 @@ export const run: ServerRoute<{ id: string }> = {
   },
 }
 
+export const output: ServerRoute<{ id: string }> = {
+  match: new URLPattern({ pathname: '/output/:id' }),
+  async fetch(_req, ctx, { id }) {
+    const sandbox = ctx.sandboxManager.get(id)
+    if (!sandbox) {
+      return new Response(null, { status: 404 })
+    }
+
+    let output = sandbox.getOutput()
+    if (!output) {
+      sandbox.askOutput()
+
+      for await (const state of sandbox.waitState('finished')) {
+        if (state === 'finished') {
+          output = sandbox.getOutput()
+        }
+      }
+    }
+
+    return new Response(output, { status: 200 })
+  },
+}
+
+const terminate: ServerRoute<{ id: string }> = {
+  match: new URLPattern({ pathname: '/terminate/:id' }),
+  async fetch(_req, ctx, { id }) {
+    await ctx.sandboxManager.delete(id)
+
+    return new Response(null, { status: 204 })
+  },
+}
+
 export default {
   fetch: (req) => {
     const isList = list.match.exec(req.url)
@@ -75,6 +98,11 @@ export default {
     const isRun = run.match.exec(req.url)
     if (isRun) {
       return run.fetch(req, context, { id: isRun.pathname.groups.id! })
+    }
+
+    const isOutput = output.match.exec(req.url)
+    if (isOutput) {
+      return output.fetch(req, context, { id: isOutput.pathname.groups.id! })
     }
 
     const isTerminate = terminate.match.exec(req.url)
