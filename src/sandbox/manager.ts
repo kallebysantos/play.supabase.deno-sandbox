@@ -6,6 +6,10 @@ export class SandboxManager {
   constructor(private workerModulePath = WORKER_MODULE) {
   }
 
+  get(id: string) {
+    return this.sandboxes.get(id)
+  }
+
   list(): Sandbox[] {
     return this.sandboxes.values().toArray()
   }
@@ -44,6 +48,13 @@ export class Sandbox {
     this.#inner.postMessage({
       command: 'init',
       data: { id },
+    })
+  }
+
+  run(code: string) {
+    this.#inner.postMessage({
+      command: 'eval',
+      data: { code },
     })
   }
 
