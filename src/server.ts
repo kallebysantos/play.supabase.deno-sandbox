@@ -1,47 +1,33 @@
-const workers = new Map<string, Worker>()
+import { SandboxManager } from './sandbox/manager.ts'
+
+const sandboxManager = new SandboxManager()
 
 export default {
   fetch: (req, info) => {
     console.log(info, req)
     const url = new URL(req.url)
-    if (url.pathname.startsWith('/create')) {
-      const id = '123'
-      const worker = init()
-      worker.postMessage({
-        command: 'init',
-        data: { id },
-      })
 
-      workers.set(id, worker)
-      return Response.json({ worker: { id } }, { status: 201 })
+    if (url.pathname.startsWith('/list')) {
+      const sandboxes = sandboxManager.list()
+
+      return Response.json(sandboxes, { status: 201 })
+    }
+
+    if (url.pathname.startsWith('/create')) {
+      const sandbox = sandboxManager.create()
+
+      return Response.json(sandbox, { status: 201 })
     }
 
     if (url.pathname.startsWith('/terminate')) {
-      const id = '123'
-      const worker = workers.get(id)
-      if (!worker) {
-        return new Response(null, { status: 404 })
-      }
+      const id = url.pathname.split('/').at(2)
+      if (!id) return new Response('missing id', { status: 400 })
 
-      worker.postMessage({
-        command: 'init',
-        data: { id },
-      })
+      sandboxManager.delete(id)
 
-      worker.terminate()
-      workers.delete(id)
-
-      return Response.json({ worker: { id } }, { status: 202 })
+      return new Response(null, { status: 204 })
     }
 
-    return Response.json({ msg: 'Hello' })
+    return new Response()
   },
 } satisfies Deno.ServeDefaultExport
-
-export function init() {
-  const worker = new Worker(new URL('./worker.ts', import.meta.url).href, {
-    type: 'module',
-  })
-
-  return worker
-}
