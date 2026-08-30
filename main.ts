@@ -1,6 +1,7 @@
+import Server from './src/server.ts'
+
+console.log('Workers sandbox started')
+
 export default {
-  fetch: (req, info) => {
-    console.log(info, req);
-    return Response.json({ msg: "Hello" });
-  },
-} satisfies Deno.ServeDefaultExport;
+  fetch: Server.fetch,
+} satisfies Deno.ServeDefaultExport
