@@ -53,7 +53,7 @@ export class SandboxManager {
 export class Sandbox {
   readonly #inner: Worker
   #state: SandboxState
-  #output: Uint8Array<ArrayBuffer> | undefined
+  #output: Uint8Array<ArrayBuffer> | null = null
 
   constructor(
     private readonly id: string,
@@ -95,12 +95,26 @@ export class Sandbox {
     this.#output = newOutput
   }
 
-  getState() {
+  state() {
     return this.#state
   }
 
-  getOutput() {
-    return this.#output
+  flush() {
+    this.#output = null
+  }
+
+  async output() {
+    if (this.#output) {
+      return this.#output
+    }
+
+    for await (const state of this.waitState('finished')) {
+      if (state === 'finished') {
+        this.setState('idle')
+
+        return this.#output
+      }
+    }
   }
 
   async *waitState(expected: SandboxState): AsyncGenerator<SandboxState> {
@@ -117,15 +131,28 @@ export class Sandbox {
     }
   }
 
-  run(code: string) {
-    if (this.#state !== 'idle' && this.#state !== 'ready') {
-      throw new Error(`Working is not 'idle' but ${this.#state}`)
+  isBlocked() {
+    return (
+      this.#state === 'init' ||
+      this.#state === 'processing' ||
+      this.#state === 'terminated'
+    )
+  }
+
+  run(code: string, wait = false) {
+    if (this.isBlocked()) {
+      throw new Error(`Sandbox can't run because its '${this.#state}'`)
+    }
+
+    if (wait) {
+      this.flush()
     }
 
     this.#inner.postMessage(
       {
         event: 'eval-code',
         code,
+        wait,
       } satisfies SandboxEvalCodeEvent,
     )
   }

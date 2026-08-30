@@ -37,17 +37,22 @@ export const run: ServerRoute<{ id: string }> = {
     if (!sandbox) {
       return new Response(null, { status: 404 })
     }
-
-    const state = sandbox.getState()
-    if (state !== 'idle') {
-      return Response.json(`Service can't run, right now. state=${state}`, { status: 423 })
+    if (sandbox.isBlocked()) {
+      return Response.json(`Service can't run, right now. state=${sandbox.state()}`, {
+        status: 423,
+      })
     }
 
-    const { code } = await req.json()
+    const { code, wait } = await req.json()
 
-    sandbox.run(code)
+    sandbox.run(code, wait)
+    if (!wait) {
+      return new Response(null, { status: 202 })
+    }
 
-    return new Response(null, { status: 202 })
+    const output = await sandbox.output()
+
+    return new Response(output, { status: 200 })
   },
 }
 
@@ -59,17 +64,11 @@ export const output: ServerRoute<{ id: string }> = {
       return new Response(null, { status: 404 })
     }
 
-    let output = sandbox.getOutput()
-    if (!output) {
+    if (sandbox.state() === 'processing') {
       sandbox.askOutput()
-
-      for await (const state of sandbox.waitState('finished')) {
-        if (state === 'finished') {
-          output = sandbox.getOutput()
-        }
-      }
     }
 
+    const output = await sandbox.output()
     return new Response(output, { status: 200 })
   },
 }

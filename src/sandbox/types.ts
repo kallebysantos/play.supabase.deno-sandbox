@@ -20,6 +20,7 @@ export type SandboxNewStateEvent = {
 export type SandboxEvalCodeEvent = {
   event: 'eval-code'
   code: string
+  wait?: boolean
 }
 
 export type SandboxRequestOutputEvent = {
