@@ -1,4 +1,10 @@
-import { SandboxEvent, SandboxInitEvent, SandboxState, SandboxTerminateEvent } from './types.ts'
+import {
+  SandboxEvalCodeEvent,
+  SandboxEvent,
+  SandboxInitEvent,
+  SandboxState,
+  SandboxTerminateEvent,
+} from './types.ts'
 
 export const WORKER_MODULE = new URL('./sandbox_worker.ts', import.meta.url)
 
@@ -76,7 +82,6 @@ export class Sandbox {
   private setState(newState: SandboxState) {
     const oldState = this.#state
     this.#state = newState
-    console.info(`Sandbox state: ${oldState} -> ${newState}`)
 
     return oldState
   }
@@ -100,10 +105,16 @@ export class Sandbox {
   }
 
   run(code: string) {
-    this.#inner.postMessage({
-      command: 'eval',
-      data: { code },
-    })
+    if (this.#state !== 'idle' && this.#state !== 'ready') {
+      throw new Error(`Working is not 'idle' but ${this.#state}`)
+    }
+
+    this.#inner.postMessage(
+      {
+        event: 'eval-code',
+        code,
+      } satisfies SandboxEvalCodeEvent,
+    )
   }
 
   private _terminate() {

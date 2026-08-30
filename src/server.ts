@@ -41,13 +41,22 @@ const terminate: ServerRoute<{ id: string }> = {
 
 export const run: ServerRoute<{ id: string }> = {
   match: new URLPattern({ pathname: '/run/:id' }),
-  async fetch(_req, ctx, { id }) {
+  async fetch(req, ctx, { id }) {
     const sandbox = ctx.sandboxManager.get(id)
-    if (!sandbox) return new Response(null, { status: 404 })
+    if (!sandbox) {
+      return new Response(null, { status: 404 })
+    }
 
-    sandbox.run(`console.log('Hello from Sandbox')`)
+    const state = sandbox.getState()
+    if (state !== 'idle') {
+      return Response.json(`Service can't run, right now. state=${state}`, { status: 423 })
+    }
 
-    return new Response(null, { status: 200 })
+    const { code } = await req.json()
+
+    sandbox.run(code)
+
+    return new Response(null, { status: 202 })
   },
 }
 

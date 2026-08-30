@@ -17,8 +17,21 @@ export type SandboxNewStateEvent = {
   newState: SandboxState
 }
 
+export type SandboxEvalCodeEvent = {
+  event: 'eval-code'
+  code: string
+}
+
+export type SandboxReadOutputEvent = {
+  event: 'read-output'
+}
+
 export type SandboxTerminateEvent = {
   event: 'terminate'
 }
 
-export type SandboxEvent = SandboxInitEvent | SandboxNewStateEvent | SandboxTerminateEvent
+export type SandboxEvent =
+  | SandboxInitEvent
+  | SandboxNewStateEvent
+  | SandboxEvalCodeEvent
+  | SandboxTerminateEvent
