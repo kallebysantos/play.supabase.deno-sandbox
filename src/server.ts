@@ -23,8 +23,9 @@ export const list: ServerRoute = {
 
 const create: ServerRoute = {
   match: new URLPattern({ pathname: '/create' }),
-  async fetch(_req, ctx) {
-    const sandbox = ctx.sandboxManager.create()
+  async fetch(req, ctx) {
+    const { wait } = await req.json()
+    const sandbox = await ctx.sandboxManager.create(wait)
 
     return Response.json(sandbox, { status: 201 })
   },

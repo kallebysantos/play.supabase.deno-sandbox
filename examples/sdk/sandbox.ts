@@ -24,6 +24,7 @@ export class Sandbox {
   }
 
   static async create(
+    wait = true,
     { baseUrl, apikey } = getSandboxClientSettings(),
   ): Promise<Sandbox> {
     const headers = new Headers()
@@ -34,6 +35,7 @@ export class Sandbox {
     const res = await fetch(new URL('/create', baseUrl), {
       method: 'POST',
       headers,
+      body: JSON.stringify({ wait }),
     })
 
     const data = await res.json() as CreateSandboxResponse

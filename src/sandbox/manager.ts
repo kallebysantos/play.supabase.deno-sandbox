@@ -23,15 +23,22 @@ export class SandboxManager {
     return this.sandboxes.values().toArray()
   }
 
-  create(): Sandbox {
+  async create(wait = false): Promise<Sandbox> {
     const id = Deno.env.get('ENV') === 'USE_DEV_ID' ? '123' : crypto.randomUUID()
     const worker = new Worker(this.workerModulePath.href, {
       type: 'module',
     })
 
     const workerBox = new Sandbox(id, worker)
-
     this.sandboxes.set(id, workerBox)
+
+    if (wait) {
+      for await (const state of workerBox.waitState('idle')) {
+        if (state === 'idle') {
+          break
+        }
+      }
+    }
 
     return workerBox
   }
