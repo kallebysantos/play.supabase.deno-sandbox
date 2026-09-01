@@ -24,7 +24,7 @@ export class SandboxManager {
   }
 
   create(): Sandbox {
-    const id = Deno.env.get('ENV') === 'DEV' ? '123' : crypto.randomUUID()
+    const id = Deno.env.get('ENV') === 'USE_DEV_ID' ? '123' : crypto.randomUUID()
     const worker = new Worker(this.workerModulePath.href, {
       type: 'module',
     })

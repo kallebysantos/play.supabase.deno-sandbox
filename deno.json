@@ -2,7 +2,7 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "start": "deno serve -A ./main.ts",
-    "dev": "ENV='DEV' deno serve -A --watch ./main.ts"
+    "dev": "deno serve -A --watch ./main.ts"
   },
   "compilerOptions": {
     "lib": [
