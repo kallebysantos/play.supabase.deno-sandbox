@@ -7,6 +7,7 @@ import {
   SandboxNewStateEvent,
   SandboxOutputEvent,
   SandboxRequestOutputEvent,
+  SandboxRunCommandEvent,
   SandboxState,
   SandboxTerminateEvent,
 } from './types.ts'
@@ -19,6 +20,9 @@ let process: Deno.ChildProcess | null = null
 onmessage = async (e: MessageEvent<SandboxEvent>) => {
   if (e.data.event === 'init') {
     handleInit(e.data)
+  }
+  if (e.data.event === 'run-command') {
+    await handleRunCommand(e.data)
   }
   if (e.data.event === 'eval-code') {
     await handleEvalCode(e.data)
@@ -37,6 +41,10 @@ function postNewState(newState: SandboxState) {
 }
 
 function postOutput(output: Deno.CommandOutput) {
+  if (output.stderr.length !== 0) {
+    console.error('Sandbox Err', new TextDecoder().decode(output.stderr))
+  }
+
   const view = new Uint8Array(output.stdout)
 
   postMessage(
@@ -56,11 +64,11 @@ function handleInit(e: SandboxInitEvent) {
   postNewState('idle')
 }
 
-async function handleEvalCode(e: SandboxEvalCodeEvent) {
+async function handleRunCommand(e: SandboxRunCommandEvent) {
   if (process) throw new Error('Process already running')
 
-  const command = new Deno.Command(Deno.execPath(), {
-    args: ['eval', e.code],
+  const command = new Deno.Command(e.command, {
+    args: e.args,
     stdin: e.wait ? 'inherit' : 'piped',
     stdout: 'piped',
     stderr: 'piped',
@@ -77,7 +85,16 @@ async function handleEvalCode(e: SandboxEvalCodeEvent) {
   postNewState('processing')
 }
 
-async function handleRequestOutput(e: SandboxRequestOutputEvent) {
+async function handleEvalCode(e: SandboxEvalCodeEvent) {
+  return await handleRunCommand({
+    event: 'run-command',
+    command: Deno.execPath(),
+    args: ['eval', e.code],
+    wait: e.wait,
+  })
+}
+
+async function handleRequestOutput(_e: SandboxRequestOutputEvent) {
   if (!process || state !== 'processing') throw new Error('Not processing')
 
   const output = await process.output()

@@ -18,6 +18,13 @@ export type SandboxNewStateEvent = {
   newState: SandboxState
 }
 
+export type SandboxRunCommandEvent = {
+  event: 'run-command'
+  command: string
+  args?: string[]
+  wait?: boolean
+}
+
 export type SandboxEvalCodeEvent = {
   event: 'eval-code'
   code: string
@@ -40,6 +47,7 @@ export type SandboxTerminateEvent = {
 export type SandboxEvent =
   | SandboxInitEvent
   | SandboxNewStateEvent
+  | SandboxRunCommandEvent
   | SandboxEvalCodeEvent
   | SandboxRequestOutputEvent
   | SandboxOutputEvent

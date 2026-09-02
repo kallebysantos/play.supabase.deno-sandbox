@@ -3,6 +3,7 @@ import {
   SandboxEvent,
   SandboxInitEvent,
   SandboxRequestOutputEvent,
+  SandboxRunCommandEvent,
   SandboxState,
   SandboxTerminateEvent,
 } from './types.ts'
@@ -158,7 +159,26 @@ export class Sandbox {
     )
   }
 
-  run(code: string, wait = false) {
+  run(command: string, args?: string[], wait = false) {
+    if (this.isBlocked()) {
+      throw new Error(`Sandbox can't run because its '${this.#state}'`)
+    }
+
+    if (wait) {
+      this.flush()
+    }
+
+    this.#inner.postMessage(
+      {
+        event: 'run-command',
+        command,
+        args,
+        wait,
+      } satisfies SandboxRunCommandEvent,
+    )
+  }
+
+  evalCode(code: string, wait = false) {
     if (this.isBlocked()) {
       throw new Error(`Sandbox can't run because its '${this.#state}'`)
     }

@@ -44,9 +44,9 @@ export const run: ServerRoute<{ id: string }> = {
       })
     }
 
-    const { code, wait } = await req.json()
+    const { command, args, wait } = await req.json()
 
-    sandbox.run(code, wait)
+    sandbox.run(command, args, wait)
     if (!wait) {
       return new Response(null, { status: 202 })
     }
