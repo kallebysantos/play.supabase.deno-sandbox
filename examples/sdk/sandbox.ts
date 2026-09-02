@@ -59,6 +59,33 @@ export class Sandbox {
     return sandboxes.map(this.fromSandboxItemResponse)
   }
 
+  async runCommand(
+    command: string,
+    args?: string[],
+    { baseUrl, apikey, wait } = {
+      ...getSandboxClientSettings(),
+      wait: true,
+    },
+  ) {
+    const headers = new Headers()
+    if (apikey) {
+      headers.set('apikey', apikey)
+    }
+
+    const res = await fetch(new URL(`/run/${this.id}`, baseUrl), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ command, args, wait }),
+    })
+
+    if (wait) {
+      return await res.text()
+    }
+
+    return res.ok
+  }
+
+  /*
   async evalCode(
     code: string,
     { baseUrl, apikey, wait } = {
@@ -83,6 +110,7 @@ export class Sandbox {
 
     return res.ok
   }
+  */
 
   async terminate(
     { baseUrl, apikey } = getSandboxClientSettings(),

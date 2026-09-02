@@ -3,8 +3,12 @@ import { Sandbox } from './sandbox.ts'
 let sandboxes = await Sandbox.list()
 
 const sandbox = sandboxes.at(0) ?? await Sandbox.create()
+console.log(sandbox)
 
-const output = await sandbox.evalCode(`console.log('Hello from Sandbox!!', 2 + 2)`)
+const output = await sandbox.runCommand('deno', [
+  'eval',
+  `console.log('Hello from Sandbox!!', 2 + 2)`,
+])
 console.log(output)
 
 sandboxes = await Sandbox.list()
