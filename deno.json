@@ -4,9 +4,13 @@
     "start": "deno serve -A ./main.ts",
     "dev": "deno serve -A --watch ./main.ts"
   },
+  "unstable": [
+    "worker-options"
+  ],
   "compilerOptions": {
     "lib": [
-      "deno.window"
+      "deno.window",
+      "deno.unstable"
     ],
     "strict": true
   },
