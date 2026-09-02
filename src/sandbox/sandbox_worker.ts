@@ -12,6 +12,7 @@ import {
 } from './types.ts'
 
 let id: string | null = null
+let workdir: string | null = null
 let state: SandboxState = 'init'
 let process: Deno.ChildProcess | null = null
 
@@ -50,6 +51,7 @@ function postOutput(output: Deno.CommandOutput) {
 
 function handleInit(e: SandboxInitEvent) {
   id = e.id
+  workdir = e.workdir
 
   postNewState('idle')
 }
@@ -62,6 +64,7 @@ async function handleEvalCode(e: SandboxEvalCodeEvent) {
     stdin: e.wait ? 'inherit' : 'piped',
     stdout: 'piped',
     stderr: 'piped',
+    cwd: workdir!,
   })
 
   if (e.wait) {

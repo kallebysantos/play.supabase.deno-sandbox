@@ -10,6 +10,7 @@ export type SandboxState =
 export type SandboxInitEvent = {
   event: 'init'
   id: string
+  workdir: string
 }
 
 export type SandboxNewStateEvent = {

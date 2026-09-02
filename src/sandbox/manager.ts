@@ -25,11 +25,21 @@ export class SandboxManager {
 
   async create(wait = false): Promise<Sandbox> {
     const id = Deno.env.get('ENV') === 'USE_DEV_ID' ? '123' : crypto.randomUUID()
+    const workdir = await Deno.makeTempDir({ prefix: `deno_sandbox_${id}_` })
     const worker = new Worker(this.workerModulePath.href, {
       type: 'module',
+      name: `sandbox_${id}`,
+      deno: {
+        permissions: {
+          env: 'inherit',
+          read: [this.workerModulePath],
+          write: [this.workerModulePath],
+          run: true,
+        },
+      },
     })
 
-    const workerBox = new Sandbox(id, worker)
+    const workerBox = new Sandbox(id, workdir, worker)
     this.sandboxes.set(id, workerBox)
 
     if (wait) {
@@ -47,7 +57,7 @@ export class SandboxManager {
     const sandbox = this.sandboxes.get(id)
     if (!sandbox) return
 
-    sandbox.terminate()
+    await sandbox.terminate()
 
     for await (const state of sandbox.waitState('terminated')) {
       if (state === 'terminated') {
@@ -64,22 +74,24 @@ export class Sandbox {
 
   constructor(
     private readonly id: string,
+    private readonly workdir: string,
     worker: Worker,
   ) {
     console.info(`Sandbox ${this.id} initializing`)
 
     this.#inner = worker
     this.#state = 'init'
-    this.#inner.onmessage = (e) => this.handleInnerMessage(e)
+    this.#inner.onmessage = async (e) => await this.handleInnerMessage(e)
     this.#inner.postMessage(
       {
         event: 'init',
         id: this.id,
+        workdir: this.workdir,
       } satisfies SandboxInitEvent,
     )
   }
 
-  private handleInnerMessage(e: MessageEvent<SandboxEvent>) {
+  private async handleInnerMessage(e: MessageEvent<SandboxEvent>) {
     if (e.data.event === 'new-state') {
       this.setState(e.data.newState)
     }
@@ -87,7 +99,7 @@ export class Sandbox {
       this.setOutput(e.data.output)
     }
     if (e.data.event === 'terminate') {
-      this._terminate()
+      await this._terminate()
     }
   }
 
@@ -172,14 +184,15 @@ export class Sandbox {
     this.#inner.postMessage({ event: 'request-output' } satisfies SandboxRequestOutputEvent)
   }
 
-  private _terminate() {
+  private async _terminate() {
     this.#inner.terminate()
     this.setState('terminated')
+    await Deno.remove(this.workdir, { recursive: true })
   }
 
-  terminate(graceful = true) {
+  async terminate(graceful = true) {
     if (!graceful) {
-      return this._terminate()
+      return await this._terminate()
     }
 
     this.#inner.postMessage({ event: 'terminate' } satisfies SandboxTerminateEvent)
