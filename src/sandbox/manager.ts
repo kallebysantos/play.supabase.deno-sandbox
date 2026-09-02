@@ -6,6 +6,7 @@ import {
   SandboxRunCommandEvent,
   SandboxState,
   SandboxTerminateEvent,
+  SandboxWriteFileEvent,
 } from './types.ts'
 
 export const WORKER_MODULE = new URL('./sandbox_worker.ts', import.meta.url)
@@ -33,8 +34,8 @@ export class SandboxManager {
       deno: {
         permissions: {
           env: 'inherit',
-          read: [this.workerModulePath],
-          write: [this.workerModulePath],
+          read: [this.workerModulePath, workdir],
+          write: [workdir],
           run: true,
         },
       },
@@ -194,6 +195,21 @@ export class Sandbox {
         wait,
       } satisfies SandboxEvalCodeEvent,
     )
+  }
+
+  async writeFile(filepath: string, data: ArrayBuffer, wait = false) {
+    // Ensuring Permission Container by moving the file creation to inner
+    this.#inner.postMessage(
+      {
+        event: 'file-write',
+        filepath,
+        data,
+        wait,
+      } satisfies SandboxWriteFileEvent,
+      [data],
+    )
+
+    await Promise.resolve()
   }
 
   askOutput() {

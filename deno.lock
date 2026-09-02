@@ -1,7 +1,27 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/internal@^1.0.14": "1.0.14",
+    "jsr:@std/path@*": "1.1.5",
+    "jsr:@std/path@1.1.6": "1.1.6",
     "npm:@anthropic-ai/claude-agent-sdk@~0.3.251": "0.3.251_@anthropic-ai+sdk@0.122.0__zod@4.4.3_@modelcontextprotocol+sdk@1.30.0__zod@4.4.3_zod@4.4.3"
+  },
+  "jsr": {
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
+    },
+    "@std/path@1.1.5": {
+      "integrity": "ccea00982ea28c36becaf6e62f855406c76a8c32d462f66f415bbb7d83a271bc",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/path@1.1.6": {
+      "integrity": "c68485c2a4dfbb5ae3cc74fae4e8c4e5d874cf8a8ed12927917235c758b46cbe",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    }
   },
   "npm": {
     "@anthropic-ai/claude-agent-sdk-darwin-arm64@0.3.251": {
@@ -616,6 +636,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "jsr:@std/path@1.1.6",
       "jsr:@supabase/server@1",
       "npm:@anthropic-ai/claude-agent-sdk@~0.3.251"
     ]

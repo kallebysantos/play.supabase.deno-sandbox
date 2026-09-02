@@ -31,6 +31,33 @@ const create: ServerRoute = {
   },
 }
 
+const upload: ServerRoute<{ id: string }> = {
+  match: new URLPattern({ pathname: '/files/upload/:id' }),
+  async fetch(req, ctx, { id }) {
+    const sandbox = ctx.sandboxManager.get(id)
+    if (!sandbox) {
+      return new Response(null, { status: 404 })
+    }
+    if (sandbox.isBlocked()) {
+      return Response.json(`Service can't run, right now. state=${sandbox.state()}`, {
+        status: 423,
+      })
+    }
+
+    const upload = await req.formData()
+    const filepath: string | null = upload.get('filepath') as string
+    const file: File | null = upload.get('data') as File
+    if (!filepath || !file) {
+      return Response.json('missing required field "data" | "filepath" ', { status: 400 })
+    }
+
+    const buffer = await file.arrayBuffer()
+    await sandbox.writeFile(filepath, buffer)
+
+    return Response.json(sandbox, { status: 201 })
+  },
+}
+
 export const run: ServerRoute<{ id: string }> = {
   match: new URLPattern({ pathname: '/run/:id' }),
   async fetch(req, ctx, { id }) {
@@ -98,6 +125,11 @@ export default {
     const isRun = run.match.exec(req.url)
     if (isRun) {
       return run.fetch(req, context, { id: isRun.pathname.groups.id! })
+    }
+
+    const isUpload = upload.match.exec(req.url)
+    if (isUpload) {
+      return upload.fetch(req, context, { id: isUpload.pathname.groups.id! })
     }
 
     const isOutput = output.match.exec(req.url)

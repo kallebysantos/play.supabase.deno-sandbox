@@ -40,6 +40,13 @@ export type SandboxOutputEvent = {
   output: Uint8Array<ArrayBuffer>
 }
 
+export type SandboxWriteFileEvent = {
+  event: 'file-write'
+  filepath: string
+  data: ArrayBuffer
+  wait?: boolean
+}
+
 export type SandboxTerminateEvent = {
   event: 'terminate'
 }
@@ -51,4 +58,5 @@ export type SandboxEvent =
   | SandboxEvalCodeEvent
   | SandboxRequestOutputEvent
   | SandboxOutputEvent
+  | SandboxWriteFileEvent
   | SandboxTerminateEvent

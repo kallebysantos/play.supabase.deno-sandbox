@@ -1,5 +1,7 @@
 /// <reference lib="deno.worker" />
 
+import * as path from '@std/path'
+
 import {
   SandboxEvalCodeEvent,
   SandboxEvent,
@@ -10,6 +12,7 @@ import {
   SandboxRunCommandEvent,
   SandboxState,
   SandboxTerminateEvent,
+  SandboxWriteFileEvent,
 } from './types.ts'
 
 let id: string | null = null
@@ -29,6 +32,9 @@ onmessage = async (e: MessageEvent<SandboxEvent>) => {
   }
   if (e.data.event === 'request-output') {
     await handleRequestOutput(e.data)
+  }
+  if (e.data.event === 'file-write') {
+    await handleWriteFile(e.data)
   }
   if (e.data.event === 'terminate') {
     handleTerminate(e.data)
@@ -99,6 +105,15 @@ async function handleRequestOutput(_e: SandboxRequestOutputEvent) {
 
   const output = await process.output()
   postOutput(output)
+}
+
+async function handleWriteFile(e: SandboxWriteFileEvent) {
+  if (!workdir) throw new Error('No workdir')
+
+  const filepath = path.join(workdir, e.filepath)
+
+  const buffer = new Uint8Array(e.data)
+  await Deno.writeFile(filepath, buffer)
 }
 
 function handleTerminate(_e: SandboxTerminateEvent) {
