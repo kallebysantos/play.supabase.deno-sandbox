@@ -1,3 +1,5 @@
+import * as path from '@std/path'
+
 export type SandboxClientSettings = {
   baseUrl: string
   apikey?: string
@@ -81,6 +83,40 @@ export class Sandbox {
     if (wait) {
       return await res.text()
     }
+
+    return res.ok
+  }
+
+  async upload(
+    source: string,
+    target: string,
+    { baseUrl, apikey } = getSandboxClientSettings(),
+  ) {
+    const headers = new Headers()
+    if (apikey) {
+      headers.set('apikey', apikey)
+    }
+
+    const scriptDir = path.dirname(path.fromFileUrl(import.meta.url))
+    const sourcePath = path.resolve(scriptDir, source)
+    const sourceStat = await Deno.stat(sourcePath)
+    if (!sourceStat.isFile) {
+      throw new Error('Not a file')
+    }
+
+    const sourceData = await Deno.readFile(sourcePath)
+
+    const upload = new FormData()
+    upload.append('filepath', target)
+    upload.append('data', new Blob([sourceData]))
+
+    const res = await fetch(new URL(`/files/upload/${this.id}`, baseUrl), {
+      method: 'POST',
+      headers,
+      body: upload,
+    })
+
+    console.log(res)
 
     return res.ok
   }
