@@ -58,6 +58,7 @@ export class Sandbox {
     })
 
     const sandboxes = await res.json() as ListSandboxResponse
+
     return sandboxes.map(this.fromSandboxItemResponse)
   }
 
@@ -115,8 +116,6 @@ export class Sandbox {
       headers,
       body: upload,
     })
-
-    console.log(res)
 
     return res.ok
   }
