@@ -8,7 +8,7 @@ export type SandboxClientSettings = {
 export function getSandboxClientSettings(): SandboxClientSettings {
   return {
     baseUrl: Deno.env.get('SUPABASE_URL') ?? 'http://localhost:8000',
-    apikey: Deno.env.get('SUPABASE_SECRET_KEY'),
+    apikey: Deno.env.get('SUPABASE_SECRET_KEY') ?? 'sb_sec_123',
   }
 }
 

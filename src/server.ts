@@ -1,5 +1,7 @@
 // deno-lint-ignore-file require-await
+import { withSupabase } from '@supabase/server'
 import { SandboxManager } from './sandbox/manager.ts'
+import { devEnv } from './utils.ts'
 
 const context = {
   sandboxManager: new SandboxManager(),
@@ -111,37 +113,37 @@ const terminate: ServerRoute<{ id: string }> = {
 }
 
 export default {
-  fetch: (req) => {
+  fetch: withSupabase({ auth: 'secret', env: devEnv }, async (req) => {
     const isList = list.match.exec(req.url)
     if (isList) {
-      return list.fetch(req, context)
+      return await list.fetch(req, context)
     }
 
     const isCreate = create.match.exec(req.url)
     if (isCreate) {
-      return create.fetch(req, context)
+      return await create.fetch(req, context)
     }
 
     const isRun = run.match.exec(req.url)
     if (isRun) {
-      return run.fetch(req, context, { id: isRun.pathname.groups.id! })
+      return await run.fetch(req, context, { id: isRun.pathname.groups.id! })
     }
 
     const isUpload = upload.match.exec(req.url)
     if (isUpload) {
-      return upload.fetch(req, context, { id: isUpload.pathname.groups.id! })
+      return await upload.fetch(req, context, { id: isUpload.pathname.groups.id! })
     }
 
     const isOutput = output.match.exec(req.url)
     if (isOutput) {
-      return output.fetch(req, context, { id: isOutput.pathname.groups.id! })
+      return await output.fetch(req, context, { id: isOutput.pathname.groups.id! })
     }
 
     const isTerminate = terminate.match.exec(req.url)
     if (isTerminate) {
-      return terminate.fetch(req, context, { id: isTerminate.pathname.groups.id! })
+      return await terminate.fetch(req, context, { id: isTerminate.pathname.groups.id! })
     }
 
     return new Response('Action NotFound', { status: 404 })
-  },
+  }),
 } satisfies Deno.ServeDefaultExport
